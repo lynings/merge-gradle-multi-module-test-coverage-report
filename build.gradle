@@ -1,0 +1,69 @@
+plugins {
+    id 'idea'
+    id 'java'
+    id 'jacoco'
+}
+
+group 'pers.lyning'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'jacoco'
+
+    test {
+        useJUnitPlatform()
+    }
+
+    repositories {
+        mavenLocal()
+        maven { url 'http://maven.aliyun.com/nexus/content/repositories/central/' }
+        mavenCentral()
+    }
+
+    dependencies {
+        project(':one')
+        project(':two')
+        testCompile 'org.junit.jupiter:junit-jupiter-api:5.3.1',
+                'org.junit.jupiter:junit-jupiter-engine:5.3.1',
+                'org.assertj:assertj-core:3.12.2'
+    }
+}
+
+allprojects {
+    jacocoTestReport {
+        additionalSourceDirs = files(sourceSets.main.allSource.srcDirs)
+        sourceDirectories = files(sourceSets.main.allSource.srcDirs)
+        classDirectories = files(sourceSets.main.output)
+        reports {
+            html.enabled = true
+            xml.enabled = true
+            csv.enabled = false
+        }
+    }
+}
+
+task jacocoRootReport(type: org.gradle.testing.jacoco.tasks.JacocoReport) {
+    dependsOn = allprojects.test
+    additionalSourceDirs = files(allprojects.sourceSets.main.allSource.srcDirs)
+    sourceDirectories = files(allprojects.sourceSets.main.allSource.srcDirs)
+    classDirectories = files(allprojects.sourceSets.main.output)
+    executionData = files(allprojects.jacocoTestReport.executionData)
+    reports {
+        html.enabled = true
+        xml.enabled = true
+        csv.enabled = false
+    }
+    onlyIf = {
+        true
+    }
+    doFirst {
+        executionData = files(executionData.findAll {
+            it.exists()
+        })
+    }
+}
+
+check.dependsOn jacocoRootReport
